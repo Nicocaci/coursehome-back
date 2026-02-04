@@ -1,41 +1,59 @@
 import express from "express";
 import mongoose from "mongoose";
+import cors from "cors";
 
 import productRouter from "./router/product-router.js";
 import userRouter from "./router/user-router.js";
 import cartRouter from "./router/cart-router.js";
 import orderRouter from "./router/order-router.js";
+import mercadoPagoRouter from "./router/mp-router.js"
 
 import dotenv from "dotenv";
 dotenv.config();
 
-
 const app = express();
 const PORT = process.env.PORT || 8080;
-mongoose.connect(process.env.MONGO_URL)
-.then(() => console.log("Conectado  a MongoDB Correctamente"))
-.catch((error) => console.log("Error al conectar la base de datos", error));
+const allowedOrigins = [
+  "http://localhost:5173",
+];
 
+mongoose
+  .connect(process.env.MONGO_URL)
+  .then(() => console.log("Conectado  a MongoDB Correctamente"))
+  .catch((error) => console.log("Error al conectar la base de datos", error));
 
-
-// Middleware 
+// Middleware
 app.use(express.json());
-app.use(express.urlencoded({ extended: true}));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Permitir requests sin origin (por ejemplo, Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("CORS no permitido por este dominio"));
+      }
+    },
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  }),
+);
+app.use(express.urlencoded({ extended: true }));
+app.use('/uploads', express.static('uploads'));
 app.use(express.static("public"));
 
 //Rutas
 
 app.get("/", (req, res) => {
-    res.send("Hola mundo");
+  res.send("Hola mundo");
 });
-app.use('/api/products', productRouter);
-app.use('/api/user', userRouter);
-app.use('/api/carts', cartRouter);
-app.use('/api/orders', orderRouter);
-
-
-
+app.use("/api/products", productRouter);
+app.use("/api/user", userRouter);
+app.use("/api/carts", cartRouter);
+app.use("/api/orders", orderRouter);
+app.use("/api/mp", mercadoPagoRouter);
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en el puerto ${PORT}`);
+  console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
-
