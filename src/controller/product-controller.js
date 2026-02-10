@@ -1,4 +1,5 @@
 import ProductService from "../service/product-service.js";
+import ProductModel from "../dao/model/product-model.js";
 import fs from "fs";
 import path from "path";
 import mongoose from "mongoose";
@@ -90,7 +91,7 @@ class ProductController {
       const data = {
         ...req.body,
         precio: req.body.precio ? Number(req.body.precio) : undefined,
-        stock: req.body.stock ? Number(req.body.stock) : undefined
+        stock: req.body.stock ? Number(req.body.stock) : undefined,
       };
 
       // 🚫 nunca permitir imagen desde body
@@ -149,25 +150,42 @@ class ProductController {
       });
     }
   }
-  async getProucts(req, res) {
+  async getProducts(req, res) {
     try {
-      const page = parseInt(req.query.page) || 1;
-      const limit = Math.min(parseInt(req.query.limit) || 15, 1000); // limite máximo razonable
-      const q = req.query.q?.trim() || "";
+      const {
+        page = 1,
+        limit = 6,
+        search,
+        category,
+        subcategory,
+        sort,
+      } = req.query;
 
-      if (page < 1 || limit < 1) {
-        return res.status(400).json({
-          message:
-            "Los parámetros 'page' y 'limit' deben ser números positivos",
-        });
-      }
+      const result = await ProductService.getProducts({
+        page: Number(page),
+        limit: Number(limit),
+        search,
+        category,
+        subcategory,
+        sort,
+      });
 
-      // Pasamos q al service
-      const result = await ProductService.getProducts(page, limit, q);
       return res.status(200).json(result);
     } catch (error) {
       return res.status(500).json({
-        message: "Error al obtener los productos",
+        message: "Error al obtener productos",
+        error: error.message,
+      });
+    }
+  }
+
+  async getCategories(req, res) {
+    try {
+      const categories = await ProductService.getDistinctCategories();
+      return res.status(200).json(categories);
+    } catch (error) {
+      return res.status(500).json({
+        message: "Error al obtener categorías",
         error: error.message,
       });
     }
@@ -209,72 +227,18 @@ class ProductController {
       });
     }
   }
-  async getProductByCategory(req, res) {
-    const category = req.params.category;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-
-    if (!category) {
-      return res.status(400).json({
-        message: "Categoría requerida",
-      });
-    }
-    // Validar que page y limit sean números positivos
-    if (page < 1 || limit < 1) {
-      return res.status(400).json({
-        message: "Los parámetros 'page' y 'limit' deben ser números positivos",
-      });
-    }
+  async getSubcategoriesByCategory(req, res) {
     try {
-      const result = await ProductService.getProductByCategory(
-        category,
-        page,
-        limit,
-      );
-      if (!result.products.length) {
-        return res.status(404).json({
-          message: "No se encontró ningún producto con esa categoría",
-        });
-      }
-      return res.status(200).json(result);
+      const { category } = req.params;
+
+      const subcategories = await ProductModel.distinct("subcategoria", {
+        categoria: category,
+      });
+
+      return res.status(200).json(subcategories);
     } catch (error) {
       return res.status(500).json({
-        message: "Error al obtener productos por categoría",
-        error: error.message,
-      });
-    }
-  }
-  async getProductBySubcategory(req, res) {
-    const subcategory = req.params.subcategory;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 10;
-
-    if (!subcategory) {
-      return res.status(400).json({
-        message: "Categoría requerida",
-      });
-    }
-    // Validar que page y limit sean números positivos
-    if (page < 1 || limit < 1) {
-      return res.status(400).json({
-        message: "Los parámetros 'page' y 'limit' deben ser números positivos",
-      });
-    }
-    try {
-      const result = await ProductService.getProductBySubCategory(
-        subcategory,
-        page,
-        limit,
-      );
-      if (!result.products.length) {
-        return res.status(404).json({
-          message: "No se encontró ningún producto con esa categoría",
-        });
-      }
-      return res.status(200).json(result);
-    } catch (error) {
-      return res.status(500).json({
-        message: "Error al obtener productos por categoría",
+        message: "Error al obtener subcategorías",
         error: error.message,
       });
     }
