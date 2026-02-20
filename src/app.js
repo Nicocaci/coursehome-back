@@ -6,7 +6,8 @@ import productRouter from "./router/product-router.js";
 import userRouter from "./router/user-router.js";
 import cartRouter from "./router/cart-router.js";
 import orderRouter from "./router/order-router.js";
-import mercadoPagoRouter from "./router/mp-router.js"
+import mercadoPagoRouter from "./router/mp-router.js";
+import contactoRouter from "./router/contacto.router.js";
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -55,6 +56,9 @@ app.use("/api/user", userRouter);
 app.use("/api/carts", cartRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/mp", mercadoPagoRouter);
+app.use("/api/contacto", contactoRouter);
+
+
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
 });
