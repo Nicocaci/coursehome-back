@@ -14,10 +14,7 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const allowedOrigins = [
-  "http://localhost:5173",
-  "https://www.cfhomedeco.com"
-];
+const allowedOrigins = ["http://localhost:5173", "https://www.cfhomedeco.com"];
 
 mongoose
   .connect(process.env.MONGO_URL)
@@ -28,22 +25,12 @@ mongoose
 app.use(express.json());
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Permitir requests sin origin (por ejemplo, Postman)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      } else {
-        return callback(new Error("CORS no permitido por este dominio"));
-      }
-    },
+    origin: true,
     credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   }),
 );
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static('uploads'));
+app.use("/uploads", express.static("uploads"));
 app.use(express.static("public"));
 
 //Rutas
@@ -57,7 +44,6 @@ app.use("/api/carts", cartRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/mp", mercadoPagoRouter);
 app.use("/api/contacto", contactoRouter);
-
 
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en el puerto ${PORT}`);
