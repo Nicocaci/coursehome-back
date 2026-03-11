@@ -16,7 +16,12 @@ const orderSchema = new mongoose.Schema({
     ],
     total: { type: Number, required: true},
     date: { type: Date, default: Date.now},
-    status: { type: String, enum: ['pendiente', 'enviado', 'entregado', 'cancelado'], default: 'pendiente'}
+    status: { type: String, enum: ['pendiente', 'enviado', 'entregado', 'cancelado'], default: 'pendiente'},
+    paymentMethod: { 
+    type: String, 
+    enum: ['mercadopago', 'efectivo'], 
+    required: true 
+}
 });
 
 const OrderModel = mongoose.model('orders', orderSchema);
