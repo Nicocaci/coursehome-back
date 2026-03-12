@@ -11,6 +11,11 @@ const orderSchema = new mongoose.Schema({
     ref: "carts",
   },
 
+  // 👇 agregar esto
+  paymentId: {
+    type: String,
+    unique: true,
+  },
   products: [
     {
       product: {

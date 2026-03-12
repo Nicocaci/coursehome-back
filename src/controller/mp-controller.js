@@ -109,7 +109,7 @@ export const mercadoPagoWebhook = async (req, res) => {
 
         // evitar orden duplicada
         const existingOrder = await OrderModel.findOne({
-          cart: cartId,
+          paymentId: payment.id,
         });
 
         if (existingOrder) {
