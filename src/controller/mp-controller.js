@@ -1,4 +1,6 @@
 import { MercadoPagoConfig, Preference, Payment } from "mercadopago";
+import CartModel from "../dao/model/cart-model.js";
+import OrderModel from "../dao/model/order-model.js";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -85,52 +87,64 @@ export const createOrder = async (req, res) => {
 
 export const mercadoPagoWebhook = async (req, res) => {
   try {
-    console.log("====== WEBHOOK RECIBIDO ======");
-    console.log(JSON.stringify(req.body, null, 2));
-
     const { type, data } = req.body;
 
     if (type === "payment") {
-      console.log("Webhook tipo PAYMENT");
-
       const payment = await new Payment(client).get({
         id: data.id,
       });
 
-      console.log("====== PAYMENT INFO ======");
-      console.log("Payment ID:", payment.id);
-      console.log("Status:", payment.status);
-      console.log("Status Detail:", payment.status_detail);
-      console.log("External Reference:", payment.external_reference);
-      console.log("Metadata:", payment.metadata);
-
       if (payment.status === "approved") {
-        console.log("PAGO APROBADO");
-
         const cartId = payment.metadata?.cart_id || payment.external_reference;
 
-        console.log("Cart ID asociado:", cartId);
+        console.log("Pago aprobado para cart:", cartId);
 
-        /*
-        ACA DEBERÍAS ACTUALIZAR O CREAR LA ORDEN
-        EJEMPLO:
+        const cart =
+          await CartModel.findById(cartId).populate("products.product");
 
-        await Order.findOneAndUpdate(
-          { cart: cartId },
-          { status: "pagado" }
-        );
-        */
+        if (!cart) {
+          console.log("Carrito no encontrado");
+          return res.sendStatus(200);
+        }
 
-        console.log("Orden debería marcarse como PAGADA");
-      } else {
-        console.log("Pago no aprobado:", payment.status);
+        // evitar orden duplicada
+        const existingOrder = await OrderModel.findOne({
+          cart: cartId,
+        });
+
+        if (existingOrder) {
+          console.log("Orden ya existe");
+          return res.sendStatus(200);
+        }
+
+        const total = cart.products.reduce((acc, item) => {
+          return acc + item.product.precio * item.quantity;
+        }, 0);
+
+        const newOrder = new OrderModel({
+          user: cart.user,
+          cart: cartId,
+          products: cart.products,
+          total: total,
+          paymentMethod: "mercadopago",
+          status: "pendiente",
+        });
+
+        await newOrder.save();
+
+        console.log("Orden creada:", newOrder._id);
+
+        // limpiar carrito
+        cart.products = [];
+        await cart.save();
+
+        console.log("Carrito limpiado");
       }
     }
 
     res.sendStatus(200);
   } catch (error) {
-    console.error("====== ERROR WEBHOOK ======");
-    console.error(error);
+    console.error("Webhook error:", error);
     res.sendStatus(500);
   }
 };
