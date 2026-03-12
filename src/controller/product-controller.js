@@ -33,7 +33,7 @@ class ProductController {
       let imagenes = [];
 
       if (req.files && req.files.length > 0) {
-        imagenes = req.files.map((f) => f.filename);
+        imagenes = req.files.map((f) => f.path);
       }
 
       // ❌ validaciones
@@ -86,7 +86,7 @@ class ProductController {
         return res.status(404).json({ message: "No existe el producto" });
       }
 
-      const nuevasImagenes = req.files?.map((file) => file.filename) || [];
+      const nuevasImagenes = req.files?.map((file) => file.path) || [];
 
       const data = {
         ...req.body,
