@@ -25,8 +25,18 @@ mongoose
 app.use(express.json());
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Permitir requests sin origin (por ejemplo, Postman)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      } else {
+        return callback(new Error("CORS no permitido por este dominio"));
+      }
+    },
     credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   }),
 );
 app.use(express.urlencoded({ extended: true }));
