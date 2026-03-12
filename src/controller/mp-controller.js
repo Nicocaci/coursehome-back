@@ -124,6 +124,7 @@ export const mercadoPagoWebhook = async (req, res) => {
         const newOrder = new OrderModel({
           user: cart.user,
           cart: cartId,
+          paymentId: payment.id,
           products: cart.products,
           total: total,
           paymentMethod: "mercadopago",
